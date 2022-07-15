@@ -11,13 +11,19 @@ enum Token = {
   DOUBLE_QUOTED_ATTRIBUTE_VALUE = 1<<9
 }
 
+struct PrepToken
+{
+  Token lhs;
+  std::string rhs;
+};
+
 class Buffer
 {
 public:
 
   Buffer():bufCounter(0),isEnd(false)
   {
-    buffer = new char [32];
+    buffer = new char [256];
   }
 
   ~Buffer()
@@ -25,13 +31,14 @@ public:
     delete [] buffer;
   }
 
-  void getChar(char& c)
+  void getChar(char c)
   {
     if (c == ' ' || c == '?' || c == '-') 
     {
       isEnd = true;
+      //нужно написать функцию либо выделения новой памяти, либо очистки старой
       return;
-    else {
+    }else {
       *(buffer + bufCounter) = c;
       bufCounter++;
     }
@@ -40,6 +47,11 @@ public:
   bool isFully()
   {
     return isEnd;
+  }
+
+  std::string getBuff()
+  {
+    
   }
 
 private:
@@ -57,52 +69,50 @@ public:
     current_token_type = static_cast<int>(TEXT);
   }
 
-
-
-  std::vector<Token> Tokenization (char& c)
+  prepToken Tokenization (char c)
   {
     switch (current_token_type)
     {
-    case TEXT:
-    {
-      if (c == '>')
+      case TEXT:
       {
-        error_message = "unexpected ending!";
-        throw std::runtime_error(error_message);
-      }else if (c == '<'){
-        current_token_type = OPENING_BLOCK_TAG_NAME | CLOSING_BLOCK_TAG_NAME | EMPTY_TAG_NAME | COMMENT | MACRO_TEG;
-      }else{
-        buffer.getChar(c)
-        if(buffer.isFully()){
+        if (c == '>')
+        {
+          error_message = "unexpected ending!";
+          throw std::runtime_error(error_message);
+        }else if (c == '<'){
+          current_token_type = OPENING_BLOCK_TAG_NAME | CLOSING_BLOCK_TAG_NAME | EMPTY_TAG_NAME | COMMENT | MACRO_TEG;
+        }else{
+          buffer.getChar(c)
+          if(buffer.isFully()){
 
+          }
+          current_token_type = TEXT;
         }
-        current_token_type = TEXT;
+
+      
+
+        break;
       }
-
-     
-
-      break;
-    }
-    case OPENING_BLOCK_TAG_NAME | CLOSING_BLOCK_TAG_NAME | EMPTY_TAG_NAME | COMMENT | MACRO_TEG:
-    {
-      if (c == ' ') current_token_type = OPENING_BLOCK_TAG_NAME;
-      if (c == '/') current_token_type = CLOSING_BLOCK_TAG_NAME;
-      if (c == '!') current_token_type = EMPTY_TAG_NAME | COMMENT;
-      if (c == '?') current_token_type = MACRO_TEG;
-    }
-    case EMPTY_TAG_NAME | COMMENT:
-    {
-      if (c == '-') current_token_type = COMMENT;
-      else current_token_type = EMPTY_TAG_NAME;
-    }
-    case COMMENT:
-    {
-      if (c == '-') 
+      case OPENING_BLOCK_TAG_NAME | CLOSING_BLOCK_TAG_NAME | EMPTY_TAG_NAME | COMMENT | MACRO_TEG:
       {
-        current_token_type = TEXT;
-        buffer.add(COMMENT);
+        if (c == ' ') current_token_type = OPENING_BLOCK_TAG_NAME;
+        if (c == '/') current_token_type = CLOSING_BLOCK_TAG_NAME;
+        if (c == '!') current_token_type = EMPTY_TAG_NAME | COMMENT;
+        if (c == '?') current_token_type = MACRO_TEG;
       }
-    }
+      case EMPTY_TAG_NAME | COMMENT:
+      {
+        if (c == '-') current_token_type = COMMENT;
+        else current_token_type = EMPTY_TAG_NAME;
+      }
+      case COMMENT:
+      {
+        if (c == '-') 
+        {
+          current_token_type = TEXT;
+          buffer.add(COMMENT);
+        }
+      }
     }
   }
 
@@ -115,14 +125,6 @@ private:
 
 class Lexer
 { 
-public:
-
-  Tokenizator MakeToken;
-  bool ready_to_tokenization = false;
-  unsigned long line;
-  unsigned long pos;
-  char c;
-
 public:
 
   void init()
@@ -144,7 +146,11 @@ public:
           if (c != '\n')
           {
             pos++;
-            MakeToken(c);
+            readyToken = MakeToken.Tokenization(c);
+            if(readyToken.lhs == END)
+            {
+              ready_to_send_Tokens.push_back(readyToken);
+            }
           }else{
             pos = 1;
             line++;
@@ -155,6 +161,19 @@ public:
     }
 
   }
+
+private:
+
+  Tokenizator MakeToken;
+  PrepToken readyToken;
+  std::vector<PrepToken> ready_to_send_Tokens;
+  bool ready_to_tokenization = false;
+  unsigned long line;
+  unsigned long pos;
+  char c;
+};
+
+class SynatAnalyzator{
 
 };
 
