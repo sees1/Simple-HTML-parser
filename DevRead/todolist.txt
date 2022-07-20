@@ -1,0 +1,1 @@
+05.07 - Разделил init и disamblee в Lexer , теперь без init не запустится disamblee. обязательно включать init!!!
